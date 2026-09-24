@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import Map from 'ol/Map'
-import View from 'ol/View'
-import TileLayer from 'ol/layer/Tile'
-import XYZ from 'ol/source/XYZ'
-import VectorLayer from 'ol/layer/Vector'
-import VectorSource from 'ol/source/Vector'
-import Feature from 'ol/Feature'
-import Point from 'ol/geom/Point'
-import { fromLonLat } from 'ol/proj'
-import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style'
-import 'ol/ol.css'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import './App.css'
 
 const defaultCenter = [-74.08175, 4.60971]
@@ -17,7 +8,7 @@ const defaultCenter = [-74.08175, 4.60971]
 function App() {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
-  const markerLayerRef = useRef(null)
+  const markerRef = useRef(null)
   const [status, setStatus] = useState('Solicitando ubicación...')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
@@ -26,60 +17,37 @@ function App() {
     const map = mapInstanceRef.current
     if (!map || !coords) return
 
-    map.getView().animate({
-      center: fromLonLat(coords),
-      zoom: 16,
-      duration: 600,
+    map.flyTo([coords[1], coords[0]], 16, {
+      animate: true,
+      duration: 1,
     })
   }
 
   useEffect(() => {
     if (!mapRef.current) return
 
-    mapRef.current.style.width = '100%'
+    const map = L.map(mapRef.current, {
+      zoomControl: true,
+      attributionControl: true,
+    }).setView(defaultCenter, 14)
 
-    const map = new Map({
-      target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new XYZ({
-            url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            crossOrigin: 'anonymous',
-            maxZoom: 19,
-          }),
-        }),
-      ],
-      view: new View({
-        center: fromLonLat(defaultCenter),
-        zoom: 14,
-        minZoom: 2,
-        maxZoom: 20,
-      }),
-    })
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map)
 
-    const markerLayer = new VectorLayer({
-      source: new VectorSource(),
-    })
-
-    map.addLayer(markerLayer)
     mapInstanceRef.current = map
-    markerLayerRef.current = markerLayer
 
     const resizeMap = () => {
-      requestAnimationFrame(() => map.updateSize())
+      setTimeout(() => map.invalidateSize(), 0)
     }
 
     resizeMap()
-
-    const resizeObserver = new ResizeObserver(() => {
-      resizeMap()
-    })
-
-    resizeObserver.observe(mapRef.current)
+    window.addEventListener('resize', resizeMap)
 
     return () => {
-      resizeObserver.disconnect()
-      map.setTarget(undefined)
+      window.removeEventListener('resize', resizeMap)
+      map.remove()
     }
   }, [])
 
@@ -101,32 +69,24 @@ function App() {
         )
 
         const map = mapInstanceRef.current
-        const markerLayer = markerLayerRef.current
+        if (!map) return
 
-        if (!map || !markerLayer) return
+        if (markerRef.current) {
+          markerRef.current.remove()
+        }
 
-        const source = markerLayer.getSource()
-        source.clear()
+        const marker = L.circleMarker([latitude, longitude], {
+          radius: 12,
+          color: '#1f8fff',
+          weight: 3,
+          fillColor: '#60a5fa',
+          fillOpacity: 0.45,
+        }).addTo(map)
 
-        const feature = new Feature({
-          geometry: new Point(fromLonLat(nextCoords)),
-        })
-
-        feature.setStyle(
-          new Style({
-            image: new CircleStyle({
-              radius: 12,
-              fill: new Fill({ color: 'rgba(33, 150, 243, 0.28)' }),
-              stroke: new Stroke({ color: '#1f8fff', width: 3 }),
-            }),
-          })
-        )
-
-        source.addFeature(feature)
-        map.getView().animate({
-          center: fromLonLat(nextCoords),
-          zoom: 16,
-          duration: 800,
+        markerRef.current = marker
+        map.flyTo([latitude, longitude], 16, {
+          animate: true,
+          duration: 1,
         })
       },
       () => {
@@ -147,7 +107,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Mapa en vivo4</p>
+          <p className="eyebrow">Mapa en vivo</p>
           <h1>Mi ubicación</h1>
         </div>
       </header>

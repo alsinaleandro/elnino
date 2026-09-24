@@ -26,6 +26,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -88,9 +89,7 @@ h1 {
 }
 
 .map,
-.map .ol-viewport,
-.map .ol-layer,
-.map canvas {
+.map .leaflet-container {
   width: 100%;
   height: 100%;
   display: block;
@@ -101,6 +100,15 @@ h1 {
   height: 100%;
   min-height: 260px;
   background: #dfeff5;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-control-zoom a {
+  border-radius: 12px !important;
 }
 
 .locate-button {
