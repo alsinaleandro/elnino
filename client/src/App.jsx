@@ -37,7 +37,6 @@ function App() {
     if (!mapRef.current) return
 
     mapRef.current.style.width = '100%'
-    mapRef.current.style.height = '420px'
 
     const map = new Map({
       target: mapRef.current,
@@ -148,7 +147,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Mapa en vivo2</p>
+          <p className="eyebrow">Mapa en vivo3</p>
           <h1>Mi ubicación</h1>
         </div>
       </header>

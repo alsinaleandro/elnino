@@ -1,6 +1,16 @@
+html, body, #root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+}
+
 .app-shell {
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #edf6ff 0%, #f7fbff 100%);
@@ -67,10 +77,9 @@ h1 {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
   border-radius: 22px;
   overflow: hidden;
-  height: calc(100vh - 230px);
-  min-height: 280px;
   border: 1px solid rgba(15, 49, 95, 0.12);
   box-shadow: 0 20px 40px rgba(26, 61, 104, 0.18);
 }
@@ -87,6 +96,7 @@ h1 {
 .map {
   width: 100%;
   height: 100%;
+  min-height: 280px;
   background: #dfeff5;
 }
 
