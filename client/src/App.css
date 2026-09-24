@@ -15,15 +15,17 @@ body {
   flex-direction: column;
   background: linear-gradient(180deg, #edf6ff 0%, #f7fbff 100%);
   color: #102542;
-  padding: 12px 12px 16px;
+  padding: 0 12px 12px;
   box-sizing: border-box;
-  gap: 10px;
+  gap: 8px;
+  overflow: hidden;
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-top: 12px;
 }
 
 .eyebrow {
@@ -82,6 +84,7 @@ h1 {
   overflow: hidden;
   border: 1px solid rgba(15, 49, 95, 0.12);
   box-shadow: 0 20px 40px rgba(26, 61, 104, 0.18);
+  height: 100%;
 }
 
 .map,
@@ -96,7 +99,7 @@ h1 {
 .map {
   width: 100%;
   height: 100%;
-  min-height: 280px;
+  min-height: 260px;
   background: #dfeff5;
 }
 

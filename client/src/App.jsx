@@ -147,7 +147,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Mapa en vivo3</p>
+          <p className="eyebrow">Mapa en vivo4</p>
           <h1>Mi ubicación</h1>
         </div>
       </header>
