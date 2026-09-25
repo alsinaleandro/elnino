@@ -191,7 +191,8 @@ function App() {
     const startedAt = performance.now()
 
     try {
-      const response = await fetch(`/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`, {
+      const apiUrl = `${window.location.origin}/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`
+      const response = await fetch(apiUrl, {
         cache: 'no-store',
       })
 
@@ -322,7 +323,8 @@ function App() {
     setRiverInfo(null)
 
     try {
-      const response = await fetch('/api/parana', { cache: 'no-store' })
+      const apiUrl = `${window.location.origin}/api/parana`
+      const response = await fetch(apiUrl, { cache: 'no-store' })
 
       if (!response.ok) {
         throw new Error('No se pudo consultar la fuente del río Paraná')

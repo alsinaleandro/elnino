@@ -13,14 +13,18 @@
       "use": "@vercel/node"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "src": "/api/parana",
+      "dest": "/api/parana"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/api/riesgo",
+      "dest": "/api/riesgo"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
