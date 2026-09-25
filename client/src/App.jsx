@@ -166,6 +166,7 @@ function App() {
   const mapInstanceRef = useRef(null)
   const markerRef = useRef(null)
   const geojsonDataRef = useRef(null)
+  const riskLoadTimeoutRef = useRef(null)
   const [status, setStatus] = useState('Solicitando ubicación...')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
@@ -202,6 +203,13 @@ function App() {
     )
   }
 
+  const clearRiskLoadTimeout = () => {
+    if (riskLoadTimeoutRef.current) {
+      clearTimeout(riskLoadTimeoutRef.current)
+      riskLoadTimeoutRef.current = null
+    }
+  }
+
   const currentRisk = riskMeta[canonicalRiskName(riskZone)] || riskMeta['Sin datos de riesgo']
 
   useEffect(() => {
@@ -219,10 +227,25 @@ function App() {
 
     mapInstanceRef.current = map
 
-    fetch('/riesgo_hidrico_AMGR_todas.geojson')
-      .then((response) => response.json())
+    const controller = new AbortController()
+    clearRiskLoadTimeout()
+    riskLoadTimeoutRef.current = window.setTimeout(() => {
+      controller.abort()
+      setRiskZone('Sin datos de riesgo')
+      setRiskColor('#4f7ee3')
+      setStatus('La capa de riesgo tarda demasiado; el mapa seguirá funcionando con la ubicación actual.')
+    }, 15000)
+
+    fetch('/riesgo_hidrico_AMGR_todas.geojson', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        return response.json()
+      })
       .then((data) => {
         geojsonDataRef.current = data
+        clearRiskLoadTimeout()
 
         const featureLayer = L.geoJSON(data, {
           style: (feature) => {
@@ -246,7 +269,11 @@ function App() {
           updateRiskFromPosition(coords[1], coords[0], 0)
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        clearRiskLoadTimeout()
+        if (error?.name === 'AbortError') {
+          return
+        }
         setStatus('No se pudieron cargar las capas de riesgo hídrico.')
       })
 
