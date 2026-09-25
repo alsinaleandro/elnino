@@ -1,23 +1,16 @@
 {
-  "name": "elnino",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "elnino-next",
+  "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "node server/server.js",
-    "dev:client": "npm --prefix client run dev -- --host 0.0.0.0",
-    "start": "node server/server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "express": "^4.21.2",
-    "ol": "^10.10.0"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.0"
+    "leaflet": "^1.9.4",
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }
