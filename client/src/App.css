@@ -101,6 +101,17 @@ body {
   height: 100%;
 }
 
+.map-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 500;
+  pointer-events: auto;
+}
+
 .map,
 .map .leaflet-container {
   width: 100%;
@@ -125,9 +136,6 @@ body {
 }
 
 .locate-button {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
   border: none;
   background: rgba(16, 37, 66, 0.94);
   color: white;
@@ -136,6 +144,13 @@ body {
   font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: 0 12px 28px rgba(10, 24, 48, 0.28);
+  max-width: 210px;
+  text-align: center;
+  white-space: normal;
+}
+
+.locate-button.secondary {
+  background: rgba(15, 23, 42, 0.8);
 }
 
 .coords-card {

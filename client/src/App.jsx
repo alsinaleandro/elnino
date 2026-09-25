@@ -168,7 +168,7 @@ function App() {
   const geojsonDataRef = useRef(null)
   const lastCoordsRef = useRef(null)
   const lastRiskUpdateRef = useRef(0)
-  const [status, setStatus] = useState('Solicitando ubicación...')
+  const [status, setStatus] = useState('Presiona “Determinar mi zona de riesgo” para consultar tu ubicación.')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
   const [activeTab, setActiveTab] = useState('map')
@@ -186,6 +186,8 @@ function App() {
   }
 
   const updateRiskFromPosition = async (latitude, longitude, accuracy) => {
+    const startedAt = performance.now()
+
     try {
       const response = await fetch(`/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`)
 
@@ -196,10 +198,11 @@ function App() {
       const data = await response.json()
       const nextZoneName = data.zone || 'Sin datos de riesgo'
       const nextColor = data.color || '#4f7ee3'
+      const elapsedMs = Math.round(performance.now() - startedAt)
 
       setRiskZone(nextZoneName)
       setRiskColor(nextColor)
-      setStatus(`Estás en: ${nextZoneName}`)
+      setStatus(`Estás en: ${nextZoneName} (${elapsedMs} ms)`)
       return
     } catch (error) {
       if (!geojsonDataRef.current) {
@@ -306,78 +309,59 @@ function App() {
     }
   }, [activeTab])
 
-  useEffect(() => {
+  const determineRiskZone = () => {
     if (!navigator.geolocation) {
       setStatus('Tu dispositivo no permite geolocalización.')
       return
     }
 
-    const refreshLocation = () => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude, accuracy } = position.coords
-          const nextCoords = [longitude, latitude]
-          const now = Date.now()
-          const previousCoords = lastCoordsRef.current
-          const shouldUpdate =
-            !previousCoords ||
-            distanceBetweenCoordinates(previousCoords, nextCoords) > 25 ||
-            now - lastRiskUpdateRef.current > 30000
+    setStatus('Consultando ubicación y zona de riesgo…')
 
-          if (!shouldUpdate) {
-            return
-          }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords
+        const nextCoords = [longitude, latitude]
 
-          const shouldFlyToLocation = !previousCoords || distanceBetweenCoordinates(previousCoords, nextCoords) > 100
-          lastCoordsRef.current = nextCoords
-          lastRiskUpdateRef.current = now
+        lastCoordsRef.current = nextCoords
+        lastRiskUpdateRef.current = Date.now()
 
-          setCoords(nextCoords)
-          setLocationReady(true)
+        setCoords(nextCoords)
+        setLocationReady(true)
 
-          updateRiskFromPosition(latitude, longitude, accuracy)
+        await updateRiskFromPosition(latitude, longitude, accuracy)
 
-          const map = mapInstanceRef.current
-          if (!map) return
+        const map = mapInstanceRef.current
+        if (!map) return
 
-          if (markerRef.current) {
-            markerRef.current.remove()
-          }
-
-          const marker = L.circleMarker([latitude, longitude], {
-            radius: 12,
-            color: '#0b172a',
-            weight: 3,
-            fillColor: '#ffffff',
-            fillOpacity: 1,
-          }).addTo(map)
-
-          markerRef.current = marker
-
-          if (shouldFlyToLocation) {
-            map.flyTo([latitude, longitude], 16, {
-              animate: true,
-              duration: 1,
-            })
-          }
-        },
-        () => {
-          setLocationReady(false)
-          setStatus('No se pudo acceder a tu ubicación. Activa el GPS.')
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 20000,
-          maximumAge: 30000,
+        if (markerRef.current) {
+          markerRef.current.remove()
         }
-      )
-    }
 
-    refreshLocation()
-    const intervalId = window.setInterval(refreshLocation, 30000)
+        const marker = L.circleMarker([latitude, longitude], {
+          radius: 12,
+          color: '#0b172a',
+          weight: 3,
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+        }).addTo(map)
 
-    return () => window.clearInterval(intervalId)
-  }, [])
+        markerRef.current = marker
+        map.flyTo([latitude, longitude], 16, {
+          animate: true,
+          duration: 1,
+        })
+      },
+      () => {
+        setLocationReady(false)
+        setStatus('No se pudo acceder a tu ubicación. Activa el GPS y vuelve a intentarlo.')
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 20000,
+        maximumAge: 30000,
+      }
+    )
+  }
 
   return (
     <main className="app-shell">
@@ -407,11 +391,16 @@ function App() {
         <div className="map-wrapper">
           <div ref={mapRef} className="map" aria-label="Mapa con ubicación del usuario" />
 
-          {locationReady && (
-            <button type="button" className="locate-button" onClick={centerOnLocation}>
-              Centrar
+          <div className="map-actions">
+            <button type="button" className="locate-button" onClick={determineRiskZone}>
+              Determinar mi zona de riesgo
             </button>
-          )}
+            {locationReady && (
+              <button type="button" className="locate-button secondary" onClick={centerOnLocation}>
+                Centrar
+              </button>
+            )}
+          </div>
         </div>
 
         {coords && (
