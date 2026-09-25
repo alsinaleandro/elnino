@@ -166,6 +166,8 @@ function App() {
   const mapInstanceRef = useRef(null)
   const markerRef = useRef(null)
   const geojsonDataRef = useRef(null)
+  const lastCoordsRef = useRef(null)
+  const lastRiskUpdateRef = useRef(0)
   const [status, setStatus] = useState('Solicitando ubicación...')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
@@ -220,6 +222,23 @@ function App() {
   }
 
   const currentRisk = riskMeta[canonicalRiskName(riskZone)] || riskMeta['Sin datos de riesgo']
+
+  const distanceBetweenCoordinates = (a, b) => {
+    if (!a || !b) return Number.POSITIVE_INFINITY
+
+    const toRad = (value) => (value * Math.PI) / 180
+    const dLat = toRad(b[1] - a[1])
+    const dLng = toRad(b[0] - a[0])
+    const lat1 = toRad(a[1])
+    const lat2 = toRad(b[1])
+
+    const haversine =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.sin(dLng / 2) * Math.sin(dLng / 2) * Math.cos(lat1) * Math.cos(lat2)
+
+    const c = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+    return 6371000 * c
+  }
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -297,49 +316,71 @@ function App() {
       return
     }
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords
-        const nextCoords = [longitude, latitude]
+    const refreshLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords
+          const nextCoords = [longitude, latitude]
+          const now = Date.now()
+          const previousCoords = lastCoordsRef.current
+          const shouldUpdate =
+            !previousCoords ||
+            distanceBetweenCoordinates(previousCoords, nextCoords) > 25 ||
+            now - lastRiskUpdateRef.current > 30000
 
-        setCoords(nextCoords)
-        setLocationReady(true)
+          if (!shouldUpdate) {
+            return
+          }
 
-        updateRiskFromPosition(latitude, longitude, accuracy)
+          const shouldFlyToLocation = !previousCoords || distanceBetweenCoordinates(previousCoords, nextCoords) > 100
+          lastCoordsRef.current = nextCoords
+          lastRiskUpdateRef.current = now
 
-        const map = mapInstanceRef.current
-        if (!map) return
+          setCoords(nextCoords)
+          setLocationReady(true)
 
-        if (markerRef.current) {
-          markerRef.current.remove()
+          updateRiskFromPosition(latitude, longitude, accuracy)
+
+          const map = mapInstanceRef.current
+          if (!map) return
+
+          if (markerRef.current) {
+            markerRef.current.remove()
+          }
+
+          const marker = L.circleMarker([latitude, longitude], {
+            radius: 12,
+            color: '#0b172a',
+            weight: 3,
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+          }).addTo(map)
+
+          markerRef.current = marker
+
+          if (shouldFlyToLocation) {
+            map.flyTo([latitude, longitude], 16, {
+              animate: true,
+              duration: 1,
+            })
+          }
+        },
+        () => {
+          setLocationReady(false)
+          setStatus('No se pudo acceder a tu ubicación. Activa el GPS.')
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 30000,
         }
+      )
+    }
 
-        const marker = L.circleMarker([latitude, longitude], {
-          radius: 12,
-          color: '#0b172a',
-          weight: 3,
-          fillColor: '#ffffff',
-          fillOpacity: 1,
-        }).addTo(map)
+    refreshLocation()
+    const intervalId = window.setInterval(refreshLocation, 30000)
 
-        markerRef.current = marker
-        map.flyTo([latitude, longitude], 16, {
-          animate: true,
-          duration: 1,
-        })
-      },
-      () => {
-        setLocationReady(false)
-        setStatus('No se pudo acceder a tu ubicación. Activa el GPS.')
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      }
-    )
-
-    return () => navigator.geolocation.clearWatch(watchId)
+    return () => window.clearInterval(intervalId)
   }, [])
 
   return (
