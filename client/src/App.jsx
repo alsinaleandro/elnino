@@ -5,10 +5,80 @@ import './App.css'
 
 const defaultCenter = [-74.08175, 4.60971]
 const riskColors = {
-  'Zona Prohibida': '#d93025',
-  'Zona de restricción severa': '#ea4335',
-  'Zona de restricción Severa temporaria': '#f39c12',
-  'Zona de restricción Leve': '#34a853',
+  'Zona Prohibida': '#2ec4b6',
+  'Zona de Restricción Severa': '#1d4ed8',
+  'Zona de Restricción Severa Temporaria': '#f59e0b',
+  'Zona de Restricción Leve': '#7dd3a8',
+}
+
+const riskMeta = {
+  'Zona Prohibida': {
+    label: 'Muy alto',
+    severity: 100,
+    description: 'Se recomienda evitar la zona por restricciones importantes.',
+  },
+  'Zona de Restricción Severa': {
+    label: 'Alto',
+    severity: 75,
+    description: 'Existe una restricción fuerte para actividades sensibles.',
+  },
+  'Zona de Restricción Severa Temporaria': {
+    label: 'Medio alto',
+    severity: 60,
+    description: 'La zona presenta una restricción temporal importante.',
+  },
+  'Zona de Restricción Leve': {
+    label: 'Bajo',
+    severity: 30,
+    description: 'La zona tiene menor nivel de restricción, pero requiere atención.',
+  },
+  'Fuera de cualquier zona de riesgo': {
+    label: 'Sin riesgo',
+    severity: 0,
+    description: 'La ubicación no coincide con ninguna zona de riesgo del mapa.',
+  },
+  'Sin datos de riesgo': {
+    label: 'Sin datos',
+    severity: 0,
+    description: 'Todavía no se pudo identificar la zona de riesgo asociada.',
+  },
+}
+
+function normalizeRiskName(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function canonicalRiskName(value) {
+  const normalized = normalizeRiskName(value)
+
+  const exact = {
+    'zona prohibida': 'Zona Prohibida',
+    'zona de restriccion severa': 'Zona de Restricción Severa',
+    'zona de restriccion severa temporaria': 'Zona de Restricción Severa Temporaria',
+    'zona de restriccion leve': 'Zona de Restricción Leve',
+    'fuera de cualquier zona de riesgo': 'Fuera de cualquier zona de riesgo',
+    'sin datos de riesgo': 'Sin datos de riesgo',
+  }
+
+  return exact[normalized] || String(value ?? 'Sin datos de riesgo')
+}
+
+function getFeatureColor(feature) {
+  const properties = feature?.properties || {}
+  const category = canonicalRiskName(properties.categoria)
+
+  return (
+    properties.color ||
+    properties.fill ||
+    properties.stroke ||
+    riskColors[category] ||
+    '#4f7ee3'
+  )
 }
 
 function isPointInRing(point, ring) {
@@ -39,16 +109,13 @@ function isPointInPolygon(point, polygonCoordinates) {
     ? polygonCoordinates
     : [polygonCoordinates]
 
-  let insideAnyRing = false
-
   for (const ring of rings) {
     if (isPointInRing(point, ring)) {
-      insideAnyRing = true
-      break
+      return true
     }
   }
 
-  return insideAnyRing
+  return false
 }
 
 function findRiskZoneForPoint(latitude, longitude, geojsonData) {
@@ -64,7 +131,7 @@ function findRiskZoneForPoint(latitude, longitude, geojsonData) {
   for (const feature of geojsonData.features) {
     if (!feature || !feature.properties || !feature.geometry) continue
 
-    const name = feature.properties.categoria
+    const name = canonicalRiskName(feature.properties.categoria)
     const geometry = feature.geometry
 
     if (geometry.type === 'Polygon') {
@@ -98,12 +165,12 @@ function App() {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markerRef = useRef(null)
-  const riskLayerRef = useRef(null)
   const geojsonDataRef = useRef(null)
   const [status, setStatus] = useState('Solicitando ubicación...')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
-  const [riskZone, setRiskZone] = useState('Sin datos')
+  const [activeTab, setActiveTab] = useState('map')
+  const [riskZone, setRiskZone] = useState('Sin datos de riesgo')
   const [riskColor, setRiskColor] = useState('#4f7ee3')
 
   const centerOnLocation = () => {
@@ -115,6 +182,18 @@ function App() {
       duration: 1,
     })
   }
+
+  const updateRiskFromPosition = (latitude, longitude, accuracy) => {
+    const nextZone = findRiskZoneForPoint(latitude, longitude, geojsonDataRef.current)
+    setRiskZone(nextZone.name)
+    setRiskColor(nextZone.color)
+
+    setStatus(
+      `Estás en: ${nextZone.name}. Precisión aprox. ${Math.round(accuracy)} m.`
+    )
+  }
+
+  const currentRisk = riskMeta[canonicalRiskName(riskZone)] || riskMeta['Sin datos de riesgo']
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -129,8 +208,6 @@ function App() {
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map)
 
-    const riskLayer = L.layerGroup().addTo(map)
-    riskLayerRef.current = riskLayer
     mapInstanceRef.current = map
 
     fetch('/riesgo_hidrico_AMGR_todas.geojson')
@@ -140,12 +217,12 @@ function App() {
 
         const featureLayer = L.geoJSON(data, {
           style: (feature) => {
-            const category = feature?.properties?.categoria
+            const layerColor = getFeatureColor(feature)
             return {
-              color: riskColors[category] || '#4f7ee3',
+              color: layerColor,
               weight: 1.5,
-              fillColor: riskColors[category] || '#4f7ee3',
-              fillOpacity: 0.28,
+              fillColor: layerColor,
+              fillOpacity: 0.42,
             }
           },
           onEachFeature: (feature, layer) => {
@@ -154,7 +231,11 @@ function App() {
           },
         })
 
-        featureLayer.addTo(riskLayer)
+        featureLayer.addTo(map)
+
+        if (coords && locationReady) {
+          updateRiskFromPosition(coords[1], coords[0], 0)
+        }
       })
       .catch(() => {
         setStatus('No se pudieron cargar las capas de riesgo hídrico.')
@@ -174,6 +255,12 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (activeTab === 'map' && mapInstanceRef.current) {
+      setTimeout(() => mapInstanceRef.current.invalidateSize(), 0)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
     if (!navigator.geolocation) {
       setStatus('Tu dispositivo no permite geolocalización.')
       return
@@ -187,13 +274,7 @@ function App() {
         setCoords(nextCoords)
         setLocationReady(true)
 
-        const zone = findRiskZoneForPoint(latitude, longitude, geojsonDataRef.current)
-        setRiskZone(zone.name)
-        setRiskColor(zone.color)
-
-        setStatus(
-          `Estás en: ${zone.name}. Precisión aprox. ${Math.round(accuracy)} m.`
-        )
+        updateRiskFromPosition(latitude, longitude, accuracy)
 
         const map = mapInstanceRef.current
         if (!map) return
@@ -232,41 +313,91 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Mapa en vivo</p>
-          <h1>Mi ubicación</h1>
+      <nav className="tab-bar" aria-label="Pestañas de la app">
+        <button
+          type="button"
+          className={activeTab === 'map' ? 'tab-button active' : 'tab-button'}
+          onClick={() => setActiveTab('map')}
+        >
+          Mapa
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'risk' ? 'tab-button active' : 'tab-button'}
+          onClick={() => setActiveTab('risk')}
+        >
+          Riesgo
+        </button>
+      </nav>
+
+      <div className={activeTab === 'map' ? 'panel visible' : 'panel hidden'}>
+        <section className="status-card">
+          <span className={`dot ${locationReady ? 'active' : ''}`} aria-hidden="true" />
+          <p>{status}</p>
+        </section>
+
+        <div className="map-wrapper">
+          <div ref={mapRef} className="map" aria-label="Mapa con ubicación del usuario" />
+
+          {locationReady && (
+            <button type="button" className="locate-button" onClick={centerOnLocation}>
+              Centrar
+            </button>
+          )}
         </div>
-      </header>
 
-      <section className="status-card">
-        <span className={`dot ${locationReady ? 'active' : ''}`} aria-hidden="true" />
-        <p>{status}</p>
-      </section>
-
-      <div className="map-wrapper">
-        <div ref={mapRef} className="map" aria-label="Mapa con ubicación del usuario" />
-
-        {locationReady && (
-          <button type="button" className="locate-button" onClick={centerOnLocation}>
-            Centrar
-          </button>
+        {coords && (
+          <section className="coords-card">
+            <span>Latitud</span>
+            <strong>{coords[1].toFixed(5)}</strong>
+            <span>Longitud</span>
+            <strong>{coords[0].toFixed(5)}</strong>
+          </section>
         )}
       </div>
 
-      {coords && (
-        <section className="coords-card">
-          <span>Latitud</span>
-          <strong>{coords[1].toFixed(5)}</strong>
-          <span>Longitud</span>
-          <strong>{coords[0].toFixed(5)}</strong>
-        </section>
-      )}
+      <div className={activeTab === 'risk' ? 'panel visible' : 'panel hidden'}>
+        <section className="risk-panel">
+          <div className="risk-header">
+            <p className="risk-label">Zona de riesgo hídrico</p>
+            <strong>{riskZone}</strong>
+          </div>
 
-      <section className="risk-card" style={{ borderLeft: `6px solid ${riskColor}` }}>
-        <p className="risk-label">Zona de riesgo hídrico</p>
-        <strong>{riskZone}</strong>
-      </section>
+          <div className="risk-meter" aria-label="Indicador de nivel de riesgo">
+            <div className="risk-meter-track">
+              <div
+                className="risk-meter-fill"
+                style={{
+                  width: `${currentRisk.severity}%`,
+                  background: riskColor,
+                }}
+              />
+            </div>
+            <span className="risk-meter-label">{currentRisk.label}</span>
+          </div>
+
+          <div className="risk-legend" style={{ borderLeft: `6px solid ${riskColor}` }}>
+            <p>{currentRisk.description}</p>
+          </div>
+
+          <div className="risk-details">
+            <div>
+              <span>Estado</span>
+              <strong>{currentRisk.label}</strong>
+            </div>
+            <div>
+              <span>Color</span>
+              <strong>{riskColor}</strong>
+            </div>
+            <div>
+              <span>Coordenadas</span>
+              <strong>
+                {coords ? `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : 'Sin ubicación'}
+              </strong>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   )
 }

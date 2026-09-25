@@ -17,31 +17,44 @@ body {
   color: #102542;
   padding: 0 12px 12px;
   box-sizing: border-box;
-  gap: 8px;
+  gap: 10px;
   overflow: hidden;
 }
 
-.topbar {
+.panel {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+}
+
+.panel.hidden {
+  display: none;
+}
+
+.tab-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   padding-top: 12px;
   flex-shrink: 0;
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #4f7ee3;
+.tab-button {
+  border: 1px solid rgba(31, 143, 255, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  color: #315177;
+  border-radius: 12px;
+  padding: 10px 12px;
   font-weight: 700;
+  font-size: 0.9rem;
 }
 
-h1 {
-  margin: 0;
-  font-size: clamp(1.9rem, 5vw, 2.6rem);
-  line-height: 1.1;
+.tab-button.active {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: white;
+  box-shadow: 0 10px 18px rgba(29, 78, 216, 0.2);
 }
 
 .status-card {
@@ -150,25 +163,100 @@ h1 {
   text-align: right;
 }
 
-.risk-card {
-  background: rgba(255, 255, 255, 0.94);
+.risk-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
   border: 1px solid rgba(35, 90, 180, 0.14);
-  border-left-width: 6px;
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: 0 10px 24px rgba(21, 55, 94, 0.08);
+  padding: 16px;
+  box-shadow: 0 18px 34px rgba(21, 55, 94, 0.08);
+}
+
+.risk-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .risk-label {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #536f9a;
 }
 
-.risk-card strong {
-  font-size: 1rem;
+.risk-header strong {
+  font-size: 1.2rem;
+  color: #102542;
+}
+
+.risk-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.risk-meter-track {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dfeafc 0%, #edf4ff 100%);
+  overflow: hidden;
+  border: 1px solid rgba(29, 78, 216, 0.12);
+}
+
+.risk-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.risk-meter-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #315177;
+}
+
+.risk-legend {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  border-left: 6px solid #4f7ee3;
+  padding: 12px 14px;
+}
+
+.risk-legend p {
+  margin: 0;
+  line-height: 1.5;
+  color: #315177;
+  font-size: 0.95rem;
+}
+
+.risk-details {
+  display: grid;
+  gap: 10px;
+}
+
+.risk-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(64, 87, 120, 0.1);
+}
+
+.risk-details span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5d7397;
+}
+
+.risk-details strong {
+  text-align: right;
+  font-size: 0.9rem;
   color: #102542;
 }
 
