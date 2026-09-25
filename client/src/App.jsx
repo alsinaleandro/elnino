@@ -199,15 +199,13 @@ function App() {
 
       setRiskZone(nextZoneName)
       setRiskColor(nextColor)
-      setStatus(`Estás en: ${nextZoneName}. Precisión aprox. ${Math.round(accuracy)} m.`)
+      setStatus(`Estás en: ${nextZoneName}`)
       return
     } catch (error) {
       if (!geojsonDataRef.current) {
         setRiskZone('Sin datos de riesgo')
         setRiskColor('#4f7ee3')
-        setStatus(
-          `Ubicación detectada. Cargando zonas de riesgo… Precisión aprox. ${Math.round(accuracy)} m.`
-        )
+        setStatus('Ubicación detectada. Cargando zonas de riesgo…')
         return
       }
 
@@ -215,9 +213,7 @@ function App() {
       setRiskZone(nextZone.name)
       setRiskColor(nextZone.color)
 
-      setStatus(
-        `Estás en: ${nextZone.name}. Precisión aprox. ${Math.round(accuracy)} m.`
-      )
+      setStatus(`Estás en: ${nextZone.name}`)
     }
   }
 
