@@ -315,40 +315,29 @@ function App() {
     if (activeTab === 'map' && mapInstanceRef.current) {
       setTimeout(() => mapInstanceRef.current.invalidateSize(), 0)
     }
-
-    if (activeTab === 'risk') {
-      let ignore = false
-      setRiverLoading(true)
-      fetch('/api/parana', { cache: 'no-store' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('No se pudo consultar la fuente del río Paraná')
-          }
-          return response.json()
-        })
-        .then((data) => {
-          if (!ignore) {
-            setRiverInfo(data)
-          }
-        })
-        .catch(() => {
-          if (!ignore) {
-            setRiverInfo({
-              error: 'No se pudo consultar la información del río Paraná en la fuente oficial.',
-            })
-          }
-        })
-        .finally(() => {
-          if (!ignore) {
-            setRiverLoading(false)
-          }
-        })
-
-      return () => {
-        ignore = true
-      }
-    }
   }, [activeTab])
+
+  const loadRiverInfo = async () => {
+    setRiverLoading(true)
+    setRiverInfo(null)
+
+    try {
+      const response = await fetch('/api/parana', { cache: 'no-store' })
+
+      if (!response.ok) {
+        throw new Error('No se pudo consultar la fuente del río Paraná')
+      }
+
+      const data = await response.json()
+      setRiverInfo(data)
+    } catch (error) {
+      setRiverInfo({
+        error: 'No se pudo consultar la información del río Paraná en la fuente oficial.',
+      })
+    } finally {
+      setRiverLoading(false)
+    }
+  }
 
   const determineRiskZone = () => {
     if (!navigator.geolocation) {
@@ -494,10 +483,22 @@ function App() {
 
           <div className="river-info">
             <h3>Información del río Paraná</h3>
+
+            {!riverInfo && !riverLoading && (
+              <button type="button" className="locate-button" onClick={loadRiverInfo}>
+                Cargar datos
+              </button>
+            )}
+
             {riverLoading ? (
               <p>Cargando información de la fuente oficial…</p>
             ) : riverInfo?.error ? (
-              <p>{riverInfo.error}</p>
+              <>
+                <p>{riverInfo.error}</p>
+                <button type="button" className="locate-button secondary" onClick={loadRiverInfo}>
+                  Reintentar
+                </button>
+              </>
             ) : riverInfo ? (
               <>
                 <p className="river-source">Fuente: {riverInfo.source}</p>
@@ -511,9 +512,7 @@ function App() {
                   <li><strong>Cota máxima:</strong> {riverInfo.data?.cotaMax} m</li>
                 </ul>
               </>
-            ) : (
-              <p>Sin información disponible.</p>
-            )}
+            ) : null}
           </div>
         </section>
       </div>
