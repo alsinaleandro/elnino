@@ -149,3 +149,26 @@ h1 {
   font-weight: 700;
   text-align: right;
 }
+
+.risk-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(35, 90, 180, 0.14);
+  border-left-width: 6px;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 24px rgba(21, 55, 94, 0.08);
+}
+
+.risk-label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #536f9a;
+}
+
+.risk-card strong {
+  font-size: 1rem;
+  color: #102542;
+}
+
