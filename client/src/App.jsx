@@ -168,7 +168,7 @@ function App() {
   const geojsonDataRef = useRef(null)
   const lastCoordsRef = useRef(null)
   const lastRiskUpdateRef = useRef(0)
-  const [status, setStatus] = useState('Presiona “Determinar mi zona de riesgo” para consultar tu ubicación.')
+  const [status, setStatus] = useState('Consultando ubicación y zona de riesgo…')
   const [coords, setCoords] = useState(null)
   const [locationReady, setLocationReady] = useState(false)
   const [activeTab, setActiveTab] = useState('map')
@@ -308,6 +308,10 @@ function App() {
   }, [])
 
   useEffect(() => {
+    determineRiskZone()
+  }, [])
+
+  useEffect(() => {
     if (activeTab === 'map' && mapInstanceRef.current) {
       setTimeout(() => mapInstanceRef.current.invalidateSize(), 0)
     }
@@ -429,9 +433,6 @@ function App() {
           <div ref={mapRef} className="map" aria-label="Mapa con ubicación del usuario" />
 
           <div className="map-actions">
-            <button type="button" className="locate-button" onClick={determineRiskZone}>
-              Determinar mi zona de riesgo
-            </button>
             {locationReady && (
               <button type="button" className="locate-button secondary" onClick={centerOnLocation}>
                 Centrar
