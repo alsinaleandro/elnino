@@ -2,6 +2,8 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 
+const paranaHandler = require('../api/parana.js')
+
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -139,6 +141,8 @@ app.get('/api/riesgo', (req, res) => {
   const result = findRiskZoneForPoint(latitude, longitude)
   return res.json(result)
 })
+
+app.get('/api/parana', (req, res) => paranaHandler(req, res))
 
 app.listen(PORT, () => {
   console.log(`Servidor de riesgo escuchando en http://localhost:${PORT}`)
