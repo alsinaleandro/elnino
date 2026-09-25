@@ -184,6 +184,15 @@ function App() {
   }
 
   const updateRiskFromPosition = (latitude, longitude, accuracy) => {
+    if (!geojsonDataRef.current) {
+      setRiskZone('Sin datos de riesgo')
+      setRiskColor('#4f7ee3')
+      setStatus(
+        `Ubicación detectada. Cargando zonas de riesgo… Precisión aprox. ${Math.round(accuracy)} m.`
+      )
+      return
+    }
+
     const nextZone = findRiskZoneForPoint(latitude, longitude, geojsonDataRef.current)
     setRiskZone(nextZone.name)
     setRiskColor(nextZone.color)
