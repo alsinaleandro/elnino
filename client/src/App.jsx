@@ -184,23 +184,40 @@ function App() {
     })
   }
 
-  const updateRiskFromPosition = (latitude, longitude, accuracy) => {
-    if (!geojsonDataRef.current) {
-      setRiskZone('Sin datos de riesgo')
-      setRiskColor('#4f7ee3')
-      setStatus(
-        `Ubicación detectada. Cargando zonas de riesgo… Precisión aprox. ${Math.round(accuracy)} m.`
-      )
+  const updateRiskFromPosition = async (latitude, longitude, accuracy) => {
+    try {
+      const response = await fetch(`/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`)
+
+      if (!response.ok) {
+        throw new Error('API de riesgo no disponible')
+      }
+
+      const data = await response.json()
+      const nextZoneName = data.zone || 'Sin datos de riesgo'
+      const nextColor = data.color || '#4f7ee3'
+
+      setRiskZone(nextZoneName)
+      setRiskColor(nextColor)
+      setStatus(`Estás en: ${nextZoneName}. Precisión aprox. ${Math.round(accuracy)} m.`)
       return
+    } catch (error) {
+      if (!geojsonDataRef.current) {
+        setRiskZone('Sin datos de riesgo')
+        setRiskColor('#4f7ee3')
+        setStatus(
+          `Ubicación detectada. Cargando zonas de riesgo… Precisión aprox. ${Math.round(accuracy)} m.`
+        )
+        return
+      }
+
+      const nextZone = findRiskZoneForPoint(latitude, longitude, geojsonDataRef.current)
+      setRiskZone(nextZone.name)
+      setRiskColor(nextZone.color)
+
+      setStatus(
+        `Estás en: ${nextZone.name}. Precisión aprox. ${Math.round(accuracy)} m.`
+      )
     }
-
-    const nextZone = findRiskZoneForPoint(latitude, longitude, geojsonDataRef.current)
-    setRiskZone(nextZone.name)
-    setRiskColor(nextZone.color)
-
-    setStatus(
-      `Estás en: ${nextZone.name}. Precisión aprox. ${Math.round(accuracy)} m.`
-    )
   }
 
   const clearRiskLoadTimeout = () => {
