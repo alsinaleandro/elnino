@@ -191,7 +191,9 @@ function App() {
     const startedAt = performance.now()
 
     try {
-      const response = await fetch(`/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`)
+      const response = await fetch(`/api/riesgo?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`, {
+        cache: 'no-store',
+      })
 
       if (!response.ok) {
         throw new Error('API de riesgo no disponible')
@@ -313,7 +315,7 @@ function App() {
     if (activeTab === 'risk') {
       let ignore = false
       setRiverLoading(true)
-      fetch('/api/parana')
+      fetch('/api/parana', { cache: 'no-store' })
         .then((response) => {
           if (!response.ok) {
             throw new Error('No se pudo consultar la fuente del río Paraná')
