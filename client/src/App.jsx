@@ -174,6 +174,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('map')
   const [riskZone, setRiskZone] = useState('Sin datos de riesgo')
   const [riskColor, setRiskColor] = useState('#4f7ee3')
+  const [riverInfo, setRiverInfo] = useState(null)
+  const [riverLoading, setRiverLoading] = useState(false)
 
   const centerOnLocation = () => {
     const map = mapInstanceRef.current
@@ -306,6 +308,39 @@ function App() {
   useEffect(() => {
     if (activeTab === 'map' && mapInstanceRef.current) {
       setTimeout(() => mapInstanceRef.current.invalidateSize(), 0)
+    }
+
+    if (activeTab === 'risk') {
+      let ignore = false
+      setRiverLoading(true)
+      fetch('/api/parana')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('No se pudo consultar la fuente del río Paraná')
+          }
+          return response.json()
+        })
+        .then((data) => {
+          if (!ignore) {
+            setRiverInfo(data)
+          }
+        })
+        .catch(() => {
+          if (!ignore) {
+            setRiverInfo({
+              error: 'No se pudo consultar la información del río Paraná en la fuente oficial.',
+            })
+          }
+        })
+        .finally(() => {
+          if (!ignore) {
+            setRiverLoading(false)
+          }
+        })
+
+      return () => {
+        ignore = true
+      }
     }
   }, [activeTab])
 
@@ -452,6 +487,30 @@ function App() {
                 {coords ? `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : 'Sin ubicación'}
               </strong>
             </div>
+          </div>
+
+          <div className="river-info">
+            <h3>Información del río Paraná</h3>
+            {riverLoading ? (
+              <p>Cargando información de la fuente oficial…</p>
+            ) : riverInfo?.error ? (
+              <p>{riverInfo.error}</p>
+            ) : riverInfo ? (
+              <>
+                <p className="river-source">Fuente: {riverInfo.source}</p>
+                <ul>
+                  <li><strong>Estación:</strong> {riverInfo.station}</li>
+                  <li><strong>Altura actual:</strong> {riverInfo.data?.altura} m</li>
+                  <li><strong>Variación:</strong> {riverInfo.data?.variacion} m</li>
+                  <li><strong>Estado:</strong> {riverInfo.data?.estado}</li>
+                  <li><strong>Fecha:</strong> {riverInfo.data?.fecha}</li>
+                  <li><strong>Cota mínima:</strong> {riverInfo.data?.cotaMin} m</li>
+                  <li><strong>Cota máxima:</strong> {riverInfo.data?.cotaMax} m</li>
+                </ul>
+              </>
+            ) : (
+              <p>Sin información disponible.</p>
+            )}
           </div>
         </section>
       </div>

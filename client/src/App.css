@@ -275,3 +275,35 @@ body {
   color: #102542;
 }
 
+.river-info {
+  margin-top: 4px;
+  background: rgba(239, 246, 255, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.river-info h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #102542;
+}
+
+.river-info p,
+.river-info li {
+  margin: 0;
+  color: #315177;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.river-source {
+  margin-bottom: 10px !important;
+  font-weight: 600;
+}
+
+.river-info ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
