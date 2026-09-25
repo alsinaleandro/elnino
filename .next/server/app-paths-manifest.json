@@ -1,6 +1,4 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/parana/route": "app/api/parana/route.js",
-  "/api/riesgo/route": "app/api/riesgo/route.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/api/parana/route": "app/api/parana/route.js"
 }

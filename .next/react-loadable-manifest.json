@@ -1,8 +1,8 @@
 {
   "app\\page.js -> leaflet": {
-    "id": 759,
+    "id": "app\\page.js -> leaflet",
     "files": [
-      "static/chunks/d0deef33.bd75b11a952a2d3d.js"
+      "static/chunks/_app-pages-browser_node_modules_leaflet_dist_leaflet-src_js.js"
     ]
   }
 }

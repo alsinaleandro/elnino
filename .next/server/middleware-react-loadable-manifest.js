@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app\\\\page.js -> leaflet":{"id":759,"files":["static/chunks/d0deef33.bd75b11a952a2d3d.js"]}}';
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\page.js -> leaflet\":{\"id\":\"app\\\\page.js -> leaflet\",\"files\":[\"static/chunks/_app-pages-browser_node_modules_leaflet_dist_leaflet-src_js.js\"]}}"
